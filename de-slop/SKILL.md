@@ -1,7 +1,7 @@
 ---
 name: de-slop
-description: Remove AI writing tells from prose and technical writing without cutting real meaning. Use when drafting, editing, reviewing, or de-slopping any text — essays, blog posts, docs, README and marketing copy, code comments, docstrings, commit messages, ADRs, PR descriptions. Catches throat-clearing, binary contrasts, false agency, and empty intensifiers; fixes thin or vague content before surface polish; and protects substance, specificity, and load-bearing technical detail.
-license: MIT. Reworked from stop-slop by Hardik Pandya (https://hvpandya.com). Full terms in LICENSE.
+description: Remove AI writing tells from prose and technical writing without cutting real meaning. Use when drafting, editing, or reviewing text — essays, docs, READMEs, code comments, docstrings, commit messages, ADRs, and PRs — or when asked to de-slop or humanize writing.
+license: MIT
 ---
 
 # de-slop
