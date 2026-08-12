@@ -26,14 +26,17 @@ class RelayTests(unittest.TestCase):
             relay.OUTBOX,
             relay.LOCK_FILE,
             relay.DASHBOARD,
+            relay.PROJECT_MEMORY,
         )
         relay.THREADS = str(root / "AI-Threads")
         relay.STATE = str(root / ".duet")
         relay.OUTBOX = str(Path(relay.STATE, "outbox.md"))
         relay.LOCK_FILE = str(Path(relay.STATE, "relay.lock"))
         relay.DASHBOARD = str(Path(relay.THREADS, "index.html"))
+        relay.PROJECT_MEMORY = str(root / "PROJECT_MEMORY.md")
         Path(relay.STATE).mkdir(parents=True)
         Path(relay.OUTBOX).write_text("", encoding="utf-8")
+        Path(relay.PROJECT_MEMORY).write_text("", encoding="utf-8")
 
     def tearDown(self) -> None:
         (
@@ -42,6 +45,7 @@ class RelayTests(unittest.TestCase):
             relay.OUTBOX,
             relay.LOCK_FILE,
             relay.DASHBOARD,
+            relay.PROJECT_MEMORY,
         ) = self.original_paths
         self.temp.cleanup()
 
@@ -349,6 +353,8 @@ class RelayTests(unittest.TestCase):
         self.assertIn("Content-Security-Policy", html_text)
         self.assertIn('@media (max-width: 720px)', html_text)
         self.assertIn('href="planning/review.md"', html_text)
+        self.assertIn('href="../PROJECT_MEMORY.md"', html_text)
+        self.assertIn("Project Memory", html_text)
         self.assertIn('data-label="Status"', html_text)
         self.assertIn('data-agent="codex"', html_text)
         self.assertIn("Plan ready.", html_text)
@@ -359,6 +365,10 @@ class RelayTests(unittest.TestCase):
             Path(relay.DASHBOARD).read_text(encoding="utf-8").startswith("<!doctype html>")
         )
         self.assertFalse(Path(relay.DASHBOARD + ".tmp").exists())
+
+    def test_project_memory_link_uses_a_file_url_across_volumes(self) -> None:
+        with patch.object(relay.os.path, "relpath", side_effect=ValueError):
+            self.assertEqual(Path(relay.PROJECT_MEMORY).as_uri(), relay._project_memory_href())
 
     def test_dashboard_limits_activity_and_completed_history(self) -> None:
         for number in range(9):
