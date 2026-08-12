@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 import glob
 import html
 import os
+from pathlib import Path
 import re
 import sys
 import time
@@ -23,6 +24,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+PROJECT_MEMORY = os.path.join(HERE, "PROJECT_MEMORY.md")
 
 
 def _resolve_base() -> str:
@@ -457,6 +459,24 @@ def _attention_panel(threads: list[Thread]) -> str:
     )
 
 
+def _project_memory_href() -> str:
+    """Link the dashboard back to the versioned memory file beside relay.py."""
+    try:
+        return os.path.relpath(PROJECT_MEMORY, THREADS).replace(os.sep, "/")
+    except ValueError:
+        return Path(PROJECT_MEMORY).as_uri()
+
+
+def _memory_panel() -> str:
+    href = _escaped(_project_memory_href())
+    return (
+        '<section class="panel"><div class="section-head"><h2>Project Memory</h2>'
+        '<span class="count">shared briefing</span></div>'
+        f'<p class="status-copy"><a href="{href}">Open project memory</a> '
+        'for concise shared context. Detailed history stays in relay threads.</p></section>'
+    )
+
+
 def _agent_card(agent: str, threads: list[Thread]) -> str:
     reports = _events(
         [thread for thread in threads if thread.stage in ACTIVE_STAGES], agent
@@ -544,6 +564,7 @@ def _dashboard_html(threads: list[Thread]) -> str:
         f'<p class="meta">Last generated <time datetime="{_escaped(generated_iso)}">'
         f'{_escaped(generated_text)}</time> \u00b7 refreshes every 5 seconds</p></header>'
         f"{_attention_panel(threads)}"
+        f"{_memory_panel()}"
         '<section class="agent-grid" aria-label="Agent status">'
         f'{_agent_card("codex", threads)}{_agent_card("claude", threads)}</section>'
         f"{_active_table(threads)}"

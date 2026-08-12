@@ -1,6 +1,7 @@
 # Python bytecode
 __pycache__/
 *.py[cod]
+*.zip
 
 # Relay runtime state (created only if the relay runs from this directory)
 AI-Threads/

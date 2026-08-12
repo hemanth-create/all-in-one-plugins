@@ -6,13 +6,13 @@ license: MIT
 
 # Duet Relay
 
-Use the bundled `scripts/relay.py` as the source implementation. Keep the target repository's relay local, standard-library-only, and explicit about cursor and baton ownership.
+Use the bundled `scripts/relay.py` as the source implementation. Keep the target repository's relay local, standard-library-only, and explicit about cursor and baton ownership. Use `templates/PROJECT_MEMORY.md` as the compact shared briefing for durable project context.
 
 Examples below use `python` (the Windows launcher `py` also works); on macOS or Linux run `python3`. Set the optional `DUET_HOME` environment variable to place `AI-Threads/` and `.duet/` outside the script's directory; by default they sit next to `relay.py`.
 
 ## Choose the workflow
 
-- **Set up:** Install the relay and merge the bundled instruction snippets.
+- **Set up:** Install the relay, create or preserve the shared project memory, and merge the bundled instruction snippets.
 - **Operate:** Use the target repository's `relay.py`; do not run the bundled copy against the skill directory.
 - **Track:** Keep one issue per lifecycle thread and use the generated dashboard for the user's overview.
 - **Diagnose:** Inspect channel logs and cursor ownership without consuming another role's queue.
@@ -22,11 +22,12 @@ Examples below use `python` (the Windows launcher `py` also works); on macOS or 
 
 1. Read the target repository's applicable `AGENTS.md`, `CLAUDE.md`, and `.claude/settings.json` first.
 2. Copy `scripts/relay.py` to the repository root. If `relay.py` already exists, review the difference and preserve intentional local behavior.
-3. Merge the Codex and Claude instruction blocks under **Repository instruction templates** into the applicable `AGENTS.md` and `CLAUDE.md`. Append or integrate; never replace unrelated guidance or duplicate an existing relay block.
-4. Create `AI-Threads/planning/`, `AI-Threads/working/`, `AI-Threads/completed/`, `.duet/`, and `.duet/outbox.md`. Treat them as runtime state.
-5. Offer the ignore entries under **Local ignore template** for repositories that should not version messages or cursors.
-6. Before changing Claude permissions, show the user the exact allowlist under **Claude permission template** and obtain approval. Merge only those entries.
-7. Run `python -m py_compile relay.py`, `python relay.py --help`, and `python relay.py dashboard`. Open `AI-Threads/index.html` manually when the user wants the dashboard. Use `py` when that is the configured Windows launcher.
+3. If the target has no `PROJECT_MEMORY.md`, copy `templates/PROJECT_MEMORY.md` to its repository root beside `relay.py`. If it already exists, preserve it byte-for-byte and report that it was retained; never merge, normalize, or overwrite it automatically.
+4. Merge the Codex and Claude instruction blocks under **Repository instruction templates** into the applicable `AGENTS.md` and `CLAUDE.md`. Append or integrate; never replace unrelated guidance or duplicate an existing relay block.
+5. Create `AI-Threads/planning/`, `AI-Threads/working/`, `AI-Threads/completed/`, `.duet/`, and `.duet/outbox.md`. Treat them as runtime state.
+6. Offer the ignore entries under **Local ignore template** for repositories that should not version messages or cursors. Do not add `PROJECT_MEMORY.md`; it is versioned by default.
+7. Before changing Claude permissions, show the user the exact allowlist under **Claude permission template** and obtain approval. Merge only those entries.
+8. Run `python -m py_compile relay.py`, `python relay.py --help`, and `python relay.py dashboard`. Open `AI-Threads/index.html` manually when the user wants the dashboard. Use `py` when that is the configured Windows launcher.
 
 Do not start a watcher unless the user asks for ongoing monitoring. Do not run Git, deployment, cloud, or network commands as part of setup.
 
@@ -89,12 +90,19 @@ Completion is rejected unless the latest message records `--next none`. Complete
 
 The relay regenerates `AI-Threads/index.html` after each post or move. Repair a stale page with `python relay.py dashboard`. Do not use the dashboard as agent context: run `threads`, then read only the active Markdown thread needed for the task.
 
+## Shared project memory
+
+`PROJECT_MEMORY.md` is a concise, curated briefing, not another relay thread or transcript. Before substantial work, read it, run `threads`, and read only the active thread that applies. The agent holding the relay baton updates it after a meaningful verified decision, result, constraint, completion, or next-step change; hand work back first instead of making simultaneous edits.
+
+Keep the file under 150 lines. Store the current state, verified project facts, decisions, known gotchas, and open questions. Link each decision to `AI-Threads/<stage>/<thread>.md` rather than duplicating detailed history. Do not update it for routine tool calls or minor edits, and never put secrets, credentials, PHI, raw conversations, or unnecessary personal data in it.
+
 ## Preserve safety
 
 - Use stable lowercase issue slugs such as `bells-8926-log-retention`; the script rejects paths, traversal, and portable-name violations.
 - Keep message bodies below 256 KiB and never relay secrets, credentials, PHI, or unnecessary personal data.
 - Let only Claude write `.duet/outbox.md`, sequentially.
 - Never edit or save live thread Markdown or generated `AI-Threads/index.html`; stale buffers can overwrite relay state.
+- Never use `PROJECT_MEMORY.md` for secrets, credentials, PHI, raw conversations, or detailed relay history.
 - Stop watchers before replacing `relay.py` or removing runtime state.
 - Treat delivery as best-effort. Channel files are the durable history; no acknowledgment protocol is provided.
 
@@ -122,6 +130,12 @@ Append or integrate this Codex block into the applicable `AGENTS.md`:
 - Start work: `python relay.py move --thread <issue-slug> --to working`
 - Complete work: `python relay.py move --thread <issue-slug> --to completed`
 - Repair the user dashboard: `python relay.py dashboard`
+
+### Shared project memory
+
+Before substantial work, read `PROJECT_MEMORY.md`, run `python relay.py threads`, and then read only the active relay thread that applies. `PROJECT_MEMORY.md` is a curated briefing, not another task log.
+
+After a meaningful verified decision, validation result, discovered constraint, completion, or next-step change, the agent holding the relay baton updates the relevant concise bullet in `PROJECT_MEMORY.md`. Link decisions to `AI-Threads/<stage>/<thread>.md` instead of duplicating detail. Do not update it for routine tool calls or minor edits. Keep it under 150 lines and never write secrets, credentials, PHI, raw conversations, or unnecessary personal data. Hand work back before updating if Claude currently holds the baton, so both agents do not edit it at once.
 
 When the user asks Claude to review a plan, choose one stable lowercase issue slug; the first post creates its planning thread. Start each material message with a concise status line and set the next actor explicitly. After approval, post the new status before moving to `working`. After implementation and validation, post the final outcome with `--next none`, then move to `completed`; the relay rejects completion without that final baton.
 
@@ -168,6 +182,12 @@ python relay.py post --thread <issue-slug> --from claude --next codex --outbox
 ```
 
 Use `--next user` for a decision the user must make and `--next none` only when no reply or action remains. Keep the first non-empty line concise because it becomes the dashboard summary. Reply with the same issue slug shown by `unseen`; lifecycle folders are resolved automatically.
+
+### Shared project memory
+
+Before substantial work, read `PROJECT_MEMORY.md`, run `python relay.py threads`, and then read only the active relay thread that applies. `PROJECT_MEMORY.md` is a curated briefing, not another task log.
+
+After a meaningful verified decision, validation result, discovered constraint, completion, or next-step change, the agent holding the relay baton updates the relevant concise bullet in `PROJECT_MEMORY.md`. Link decisions to `AI-Threads/<stage>/<thread>.md` instead of duplicating detail. Do not update it for routine tool calls or minor edits. Keep it under 150 lines and never write secrets, credentials, PHI, raw conversations, or unnecessary personal data. Hand work back before updating if Codex currently holds the baton, so both agents do not edit it at once.
 
 Only Claude writes the single-slot outbox, one message at a time. Analyze Codex's message before replying. Use `threads`, then read only the relevant lifecycle Markdown for history or recovery. Do not edit thread files or generated `AI-Threads/index.html`. Stop the watcher before relay maintenance. The owning agent moves an approved thread with `python relay.py move --thread <issue-slug> --to working` and, after a final `--next none` outcome, to `completed`; the relay rejects completion without that final baton. Repair only a stale dashboard with `python relay.py dashboard`.
 ````
