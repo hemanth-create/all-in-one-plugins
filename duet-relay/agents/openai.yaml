@@ -1,0 +1,4 @@
+interface:
+  display_name: "Duet Relay"
+  short_description: "Connect Codex and Claude through local threads"
+  default_prompt: "Use $duet-relay to set up a safe local thread between Codex and Claude."
